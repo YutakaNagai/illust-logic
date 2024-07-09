@@ -3,8 +3,9 @@ import { onMounted, ref, watch } from "vue";
 import { supabase } from "../supabase";
 
 const dot_field = ref([]);
-for (let i = 0; i < 10; i++) {
-  dot_field.value.push(Array(10).fill(false));
+const size = ref(Number(sessionStorage.getItem("size")) || 10);
+for (let i = 0; i < size.value; i++) {
+  dot_field.value.push(Array(size.value).fill(false));
 }
 
 const title = ref("");
@@ -188,6 +189,39 @@ const initIllust = () => {
   });
 };
 
+const chgFieldSize = (size) => {
+  sessionStorage.setItem("size", size);
+  location.reload();
+  // const elemList = Array.from(document.getElementsByClassName("cell"));
+  // elemList.forEach((cell) => {
+  //   console.log("cell :>> ", cell);
+  //   if (cell.classList.contains("painted")) {
+  //     console.log("cell.classList :>> ", cell.classList);
+  //     cell.classList.remove("painted");
+  //     const coordinate = cell.id.split("_");
+  //     dot_field.value[coordinate[0]][coordinate[1]] = false;
+  //   }
+  // });
+  // dot_field.value = [];
+  // const promiseList = [];
+  // for (let i = 0; i < size; i++) {
+  //   promiseList.push(dot_field.value.push(Array(size).fill(false)));
+  // }
+  // Promise.all(promiseList).then(() => {
+  //   const elemListAfter = Array.from(document.getElementsByClassName("cell"));
+  //   // document.innerWidth;
+  //   console.log("window.innerWidth :>> ", window.innerWidth);
+  //   const max_size = (window.innerWidth * 0.8) / size;
+  //   console.log("dot_field.value :>> ", dot_field.value);
+  //   console.log("elemListAfter :>> ", elemListAfter);
+  //   elemListAfter.forEach((cell) => {
+  //     cell.classList.add("mini");
+  //     cell.style.width = `${max_size}px`;
+  //     cell.style.height = `${max_size}px`;
+  //   });
+  // });
+};
+
 const displayError = (err, msg) => {
   if (err === "title") {
     title_textarea.value.classList.add("error_bg");
@@ -223,8 +257,10 @@ watch(description, () => {
         エラー: {{ error }}
       </div>
     </div>
-    <div>
-      <button></button>
+    <div class="size_btn_area">
+      <button @click="chgFieldSize(10)">10x10</button>
+      <button @click="chgFieldSize(20)">20x20</button>
+      <button @click="chgFieldSize(30)">30x30</button>
     </div>
     <div ref="illust_field" class="illust_field">
       <div
@@ -237,7 +273,10 @@ watch(description, () => {
           :key="`row_${r_index}`"
           :id="`${c_index}_${r_index}`"
           class="cell"
-          :class="row ? 'painted' : ''"
+          :class="
+            (row ? 'painted' : '',
+            size == 10 ? '--large' : size == 20 ? '--medium' : '--small')
+          "
           @click="paintCell(c_index, r_index)"
         ></div>
       </div>
@@ -284,10 +323,16 @@ watch(description, () => {
   padding: 5px 0 5px 20px;
 }
 
+.size_btn_area {
+  display: flex;
+  justify-content: space-evenly;
+}
+
 .illust_field {
+  width: 100%;
   display: flex;
   justify-content: center;
-  margin: 25px;
+  margin: 25px auto 25px auto;
 }
 .cell {
   width: 20px;
@@ -317,5 +362,19 @@ watch(description, () => {
 }
 .error_bg {
   background-color: rgb(252, 212, 224);
+}
+
+.--large {
+  width: 30px;
+  height: 30px;
+}
+
+.--medium {
+  width: 15px;
+  height: 15px;
+}
+.--small {
+  width: 10px;
+  height: 10px;
 }
 </style>
