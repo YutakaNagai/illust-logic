@@ -26,6 +26,12 @@ onMounted(() => {
   description_textarea.value.focus();
   illust_field.value.focus();
 
+  // スマホスクロール無効化
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+  };
+  document.addEventListener("touchmove", handleTouchMove, { passive: false });
+
   let move_action = "paint";
   illust_field.value.ontouchstart = (event) => {
     console.log("touch start");
