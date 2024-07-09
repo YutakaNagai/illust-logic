@@ -189,9 +189,15 @@ const addPuzzle = async (
 
 const initIllust = () => {
   dot_field.value.forEach((col, c_index) => {
-    col.forEach((_, r_index) => {
+    col.forEach((cell, r_index) => {
       dot_field.value[c_index][r_index] = false;
     });
+  });
+  const elemList = Array.from(document.getElementsByClassName("cell"));
+  elemList.forEach((cell) => {
+    if (cell.classList.contains("painted")) {
+      cell.classList.remove("painted");
+    }
   });
 };
 
