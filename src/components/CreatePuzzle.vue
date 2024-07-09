@@ -14,6 +14,7 @@ const error_list = ref([]);
 const title_textarea = ref(null);
 const description_textarea = ref(null);
 const error_sticky = ref(null);
+const illust_field = ref(null);
 
 const paintCell = (c, r) => {
   dot_field.value[c][r] = !dot_field.value[c][r];
@@ -22,6 +23,34 @@ const paintCell = (c, r) => {
 onMounted(() => {
   title_textarea.value.focus();
   description_textarea.value.focus();
+  illust_field.value.focus();
+
+  let move_action = "paint";
+  illust_field.value.ontouchstart = (event) => {
+    console.log("touch start");
+    // タッチ開始時点のセルが黒なら黒→白、白なら白→黒
+    move_action = event.touches[0].target.classList.contains("painted")
+      ? "erase"
+      : "paint";
+  };
+  illust_field.value.ontouchmove = (event) => {
+    // 画面のスクロールを防止する
+    const touch = event.touches[0];
+    const slide_target = document.elementFromPoint(
+      touch.clientX,
+      touch.clientY
+    );
+    if (slide_target.classList.contains("cell")) {
+      const coordinate = slide_target.id.split("_");
+      if (move_action === "paint") {
+        slide_target.classList.add("painted");
+        dot_field.value[coordinate[0]][coordinate[1]] = true;
+      } else {
+        slide_target.classList.remove("painted");
+        dot_field.value[coordinate[0]][coordinate[1]] = false;
+      }
+    }
+  };
 });
 
 const saveIllust = () => {
@@ -197,7 +226,7 @@ watch(description, () => {
     <div>
       <button></button>
     </div>
-    <div class="illust_field">
+    <div ref="illust_field" class="illust_field">
       <div
         v-for="(col, c_index) in dot_field"
         :key="`col_${c_index}`"
@@ -206,6 +235,7 @@ watch(description, () => {
         <div
           v-for="(row, r_index) in col"
           :key="`row_${r_index}`"
+          :id="`${c_index}_${r_index}`"
           class="cell"
           :class="row ? 'painted' : ''"
           @click="paintCell(c_index, r_index)"
