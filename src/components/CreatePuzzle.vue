@@ -64,7 +64,7 @@ onMounted(() => {
   };
 });
 
-const saveIllust = () => {
+const saveIllust = async () => {
   msg_list.value = [];
   sticky.value.classList.remove("sticky_slidein");
   let is_error = false;
@@ -140,56 +140,43 @@ const saveIllust = () => {
     }
 
     if (!is_error) {
-      addPuzzle(
-        title.value,
-        description.value,
-        "0",
-        "テストユーザー",
-        col.answer,
-        col.hint,
-        row.answer,
-        row.hint,
-        dot_field.value.length,
-        dot_field.value[0].length
-      );
-      displaySticky("saved", "作成したパズルを保存しました！");
+      const record = {
+        title: title.value,
+        description: description.value,
+        creator_id: "0",
+        creator_name: "テストユーザー",
+        col_answer: col.answer,
+        col_hint: col.hint,
+        row_answer: row.answer,
+        row_hint: row.hint,
+        num_of_col: dot_field.value.length,
+        num_of_row: dot_field.value[0].length,
+        challenged: 0,
+        solved: 0,
+        good: 0,
+        bad: 0,
+        is_deleted: false,
+      };
+      const res = await addPuzzle(record);
+      console.log("res :>> ", res);
+
+      if (res.status === 201 && !res.error) {
+        console.group("下記のレコードをDBに登録しました。");
+        console.table(record);
+        console.groupEnd();
+        displaySticky("saved", "作成したパズルを保存しました！");
+      } else {
+        displaySticky(
+          "other",
+          "エラー: 通信環境を確認し、再度保存してください"
+        );
+      }
     }
   }
 };
 
-const addPuzzle = async (
-  title,
-  description,
-  creator_id,
-  creator_name,
-  col_answer,
-  col_hint,
-  row_answer,
-  row_hint,
-  num_of_col,
-  num_of_row
-) => {
-  const record = {
-    title,
-    description,
-    creator_id,
-    creator_name,
-    col_answer,
-    col_hint,
-    row_answer,
-    row_hint,
-    num_of_col,
-    num_of_row,
-    challenged: 0,
-    solved: 0,
-    good: 0,
-    bad: 0,
-    is_deleted: false,
-  };
-  const { data, error } = await supabase.from("illust_logic").insert([record]);
-  console.group("下記のレコードをDBに登録しました。");
-  console.table(record);
-  console.groupEnd();
+const addPuzzle = async (record) => {
+  return await supabase.from("illust_logic").insert([record]);
 };
 
 const initIllust = () => {
@@ -264,14 +251,16 @@ const displaySticky = (type, msg) => {
   }
 
   if (type === "title") {
+    title_textarea.value.classList.add("error_bg");
     msg_list.value.push(msg);
     sticky.value.classList.add("--error");
   }
   if (type === "description") {
+    description_textarea.value.classList.add("error_bg");
     msg_list.value.push(msg);
     sticky.value.classList.add("--error");
   }
-  if (type === "dot_field") {
+  if (type === "dot_field" || type === "other") {
     msg_list.value.push(msg);
     sticky.value.classList.add("--error");
   }
@@ -281,7 +270,6 @@ const displaySticky = (type, msg) => {
   }
   sticky.value.classList.add("sticky_slidein");
   setTimeout(() => {
-    console.log("delete sticky :>> ");
     sticky.value.classList.remove("sticky_slidein");
   }, 2500);
 };
