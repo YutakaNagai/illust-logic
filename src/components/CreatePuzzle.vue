@@ -17,10 +17,6 @@ const description_textarea = ref(null);
 const error_sticky = ref(null);
 const illust_field = ref(null);
 
-const paintCell = (c, r) => {
-  dot_field.value[c][r] = !dot_field.value[c][r];
-};
-
 onMounted(() => {
   title_textarea.value.focus();
   description_textarea.value.focus();
@@ -39,6 +35,14 @@ onMounted(() => {
     move_action = event.touches[0].target.classList.contains("painted")
       ? "erase"
       : "paint";
+    const coordinate = event.touches[0].target.id.split("_");
+    if (move_action === "erase") {
+      event.touches[0].target.classList.remove("painted");
+      dot_field.value[coordinate[0]][coordinate[1]] = false;
+    } else {
+      event.touches[0].target.classList.add("painted");
+      dot_field.value[coordinate[0]][coordinate[1]] = true;
+    }
   };
   illust_field.value.ontouchmove = (event) => {
     // 画面のスクロールを防止する
@@ -47,7 +51,7 @@ onMounted(() => {
       touch.clientX,
       touch.clientY
     );
-    if (slide_target.classList.contains("cell")) {
+    if (slide_target && slide_target.classList.contains("cell")) {
       const coordinate = slide_target.id.split("_");
       if (move_action === "paint") {
         slide_target.classList.add("painted");
@@ -289,7 +293,6 @@ watch(description, () => {
             (row ? 'painted' : '',
             size == 10 ? '--large' : size == 20 ? '--medium' : '--small')
           "
-          @click="paintCell(c_index, r_index)"
         ></div>
       </div>
     </div>
