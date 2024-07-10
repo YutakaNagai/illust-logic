@@ -11,10 +11,10 @@ for (let i = 0; i < size.value; i++) {
 const title = ref("");
 const description = ref("");
 
-const error_list = ref([]);
+const msg_list = ref([]);
 const title_textarea = ref(null);
 const description_textarea = ref(null);
-const error_sticky = ref(null);
+const sticky = ref(null);
 const illust_field = ref(null);
 
 onMounted(() => {
@@ -65,16 +65,16 @@ onMounted(() => {
 });
 
 const saveIllust = () => {
-  error_list.value = [];
-  error_sticky.value.classList.remove("error_slidein");
+  msg_list.value = [];
+  sticky.value.classList.remove("sticky_slidein");
   let is_error = false;
   // バリデーション
   if (!title.value || !title.value.match(/\S/g)) {
-    displayError("title", "タイトルが未設定です。");
+    displaySticky("title", "エラー: タイトルが未設定です。");
     is_error = true;
   }
   if (!description.value || !description.value.match(/\S/g)) {
-    displayError("description", "詳細が未設定です。");
+    displaySticky("description", "エラー: 詳細が未設定です。");
     is_error = true;
   }
   if (!is_error) {
@@ -135,7 +135,7 @@ const saveIllust = () => {
     const row = createHint(transpose_array);
 
     if (is_blank) {
-      displayError("dot_field", "作図が行われていません。");
+      displaySticky("dot_field", "エラー: 作図が行われていません。");
       is_error = true;
     }
 
@@ -152,6 +152,7 @@ const saveIllust = () => {
         dot_field.value.length,
         dot_field.value[0].length
       );
+      displaySticky("saved", "作成したパズルを保存しました！");
     }
   }
 };
@@ -254,19 +255,35 @@ const hideBorder = () => {
   }
 };
 
-const displayError = (err, msg) => {
-  if (err === "title") {
-    title_textarea.value.classList.add("error_bg");
-    error_list.value.push(msg);
+const displaySticky = (type, msg) => {
+  if (sticky.value.classList.contains("--error")) {
+    sticky.value.classList.remove("--error");
   }
-  if (err === "description") {
-    description_textarea.value.classList.add("error_bg");
-    error_list.value.push(msg);
+  if (sticky.value.classList.contains("--save")) {
+    sticky.value.classList.remove("--save");
   }
-  if (err === "dot_field") {
-    error_list.value.push(msg);
+
+  if (type === "title") {
+    msg_list.value.push(msg);
+    sticky.value.classList.add("--error");
   }
-  error_sticky.value.classList.add("error_slidein");
+  if (type === "description") {
+    msg_list.value.push(msg);
+    sticky.value.classList.add("--error");
+  }
+  if (type === "dot_field") {
+    msg_list.value.push(msg);
+    sticky.value.classList.add("--error");
+  }
+  if (type === "saved") {
+    msg_list.value.push(msg);
+    sticky.value.classList.add("--save");
+  }
+  sticky.value.classList.add("sticky_slidein");
+  setTimeout(() => {
+    console.log("delete sticky :>> ");
+    sticky.value.classList.remove("sticky_slidein");
+  }, 2500);
 };
 
 watch(title, () => {
@@ -280,13 +297,13 @@ watch(description, () => {
 
 <template>
   <div>
-    <div ref="error_sticky" class="error_sticky">
+    <div ref="sticky" class="sticky">
       <div
-        v-for="(error, index) in error_list"
+        v-for="(msg, index) in msg_list"
         :key="`error_${index}`"
-        class="error_msg"
+        class="sticky_msg"
       >
-        エラー: {{ error }}
+        {{ msg }}
       </div>
     </div>
     <div class="size_btn_area">
@@ -331,32 +348,37 @@ watch(description, () => {
 
     <div class="btn_area">
       <button @click="initIllust()">クリア</button>
-      <button @click="hideBorder()">クリア</button>
+      <button @click="hideBorder()">枠線</button>
       <button @click="saveIllust()">保存</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.error_sticky {
+.sticky {
   position: absolute;
   width: 100%;
   top: 0;
   left: 0;
   display: flex;
   flex-flow: column;
-  background-color: #fcd4e0;
   text-align: left;
   box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5),
     inset 0px -3px 6px -2px rgba(0, 0, 0, 0.3);
   transition: 1s cubic-bezier(0.23, 1, 0.32, 1);
   line-height: 2;
-  transform: translateY(-40px);
+  transform: translateY(-100px);
 }
-.error_slidein {
+.--error {
+  background-color: #fcd4e0;
+}
+.--save {
+  background-color: #bcf4f8;
+}
+.sticky_slidein {
   transform: none;
 }
-.error_msg {
+.sticky_msg {
   padding: 5px 0 5px 20px;
 }
 
