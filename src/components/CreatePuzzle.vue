@@ -238,6 +238,22 @@ const chgFieldSize = (size) => {
   // });
 };
 
+let is_show_border = true;
+const hideBorder = () => {
+  const elemList = Array.from(document.getElementsByClassName("cell"));
+  if (is_show_border) {
+    elemList.forEach((cell) => {
+      cell.classList.remove("--border");
+    });
+    is_show_border = false;
+  } else {
+    elemList.forEach((cell) => {
+      cell.classList.add("--border");
+    });
+    is_show_border = true;
+  }
+};
+
 const displayError = (err, msg) => {
   if (err === "title") {
     title_textarea.value.classList.add("error_bg");
@@ -288,11 +304,16 @@ watch(description, () => {
           v-for="(row, r_index) in col"
           :key="`row_${r_index}`"
           :id="`${c_index}_${r_index}`"
-          class="cell"
-          :class="
-            (row ? 'painted' : '',
-            size == 10 ? '--large' : size == 20 ? '--medium' : '--small')
-          "
+          class="cell --border"
+          :class="{
+            '--large': size === 10,
+            '--medium': size === 20,
+            '--small': size === 30,
+            '--thick_left': c_index % 5 === 0,
+            '--thick_right': c_index === size - 1,
+            '--thick_top': r_index % 5 === 0,
+            '--thick_bottom': r_index === size - 1,
+          }"
         ></div>
       </div>
     </div>
@@ -310,6 +331,7 @@ watch(description, () => {
 
     <div class="btn_area">
       <button @click="initIllust()">クリア</button>
+      <button @click="hideBorder()">クリア</button>
       <button @click="saveIllust()">保存</button>
     </div>
   </div>
@@ -352,9 +374,24 @@ watch(description, () => {
 .cell {
   width: 20px;
   height: 20px;
-  border: 1px solid black;
   margin-bottom: -1px;
   margin-right: -1px;
+  box-sizing: border-box;
+}
+.--border {
+  border: 1px solid black;
+}
+.--thick_left {
+  border-left-width: 3px;
+}
+.--thick_right {
+  border-right-width: 3px;
+}
+.--thick_top {
+  border-top-width: 3px;
+}
+.--thick_bottom {
+  border-bottom-width: 3px;
 }
 .painted {
   background-color: rgb(104, 98, 98);
