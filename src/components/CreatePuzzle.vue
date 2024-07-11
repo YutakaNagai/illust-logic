@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
 import { supabase } from "../supabase";
+import PuzzleImg from "./PuzzleImg.vue";
 
 const dot_field = ref([]);
 const size = ref(Number(sessionStorage.getItem("size")) || 10);
@@ -15,15 +16,18 @@ const msg_list = ref([]);
 
 const paint_mode = ref("auto");
 
+// テンプレート参照
 const title_textarea = ref(null);
 const description_textarea = ref(null);
 const sticky = ref(null);
 const illust_field = ref(null);
+const modal = ref(null);
 
 onMounted(() => {
   title_textarea.value.focus();
   description_textarea.value.focus();
   illust_field.value.focus();
+  modal.value.focus();
 
   // スマホスクロール無効化
   const handleTouchMove = (e) => {
@@ -71,7 +75,10 @@ onMounted(() => {
   };
 });
 
-const saveIllust = async () => {
+let col;
+let row;
+
+const validate = () => {
   msg_list.value = [];
   sticky.value.classList.remove("sticky_slidein");
   let is_error = false;
@@ -131,7 +138,7 @@ const saveIllust = async () => {
     };
 
     // 垂直方向のヒント作成
-    const col = createHint(dot_field.value);
+    col = createHint(dot_field.value);
 
     // 二次元配列を転置
     const transpose_array = dot_field.value[0].map((_, c) =>
@@ -139,46 +146,47 @@ const saveIllust = async () => {
     );
 
     // 水平方向のヒント作成
-    const row = createHint(transpose_array);
+    row = createHint(transpose_array);
 
     if (is_blank) {
       displaySticky("dot_field", "エラー: 作図が行われていません。");
       is_error = true;
+    } else {
+      showModal();
     }
+  }
+};
 
-    if (!is_error) {
-      const record = {
-        title: title.value,
-        description: description.value,
-        creator_id: "0",
-        creator_name: "テストユーザー",
-        col_answer: col.answer,
-        col_hint: col.hint,
-        row_answer: row.answer,
-        row_hint: row.hint,
-        num_of_col: dot_field.value.length,
-        num_of_row: dot_field.value[0].length,
-        challenged: 0,
-        solved: 0,
-        good: 0,
-        bad: 0,
-        is_deleted: false,
-      };
-      const res = await addPuzzle(record);
-      console.log("res :>> ", res);
+const saveIllust = async () => {
+  const record = {
+    title: title.value,
+    description: description.value,
+    creator_id: "0",
+    creator_name: "テストユーザー",
+    col_answer: col.answer,
+    col_hint: col.hint,
+    row_answer: row.answer,
+    row_hint: row.hint,
+    num_of_col: dot_field.value.length,
+    num_of_row: dot_field.value[0].length,
+    challenged: 0,
+    solved: 0,
+    good: 0,
+    bad: 0,
+    is_deleted: false,
+  };
+  const res = await addPuzzle(record);
+  console.log("res :>> ", res);
 
-      if (res.status === 201 && !res.error) {
-        console.group("下記のレコードをDBに登録しました。");
-        console.table(record);
-        console.groupEnd();
-        displaySticky("saved", "作成したパズルを保存しました！");
-      } else {
-        displaySticky(
-          "other",
-          "エラー: 通信環境を確認し、再度保存してください"
-        );
-      }
-    }
+  if (res.status === 201 && !res.error) {
+    console.group("下記のレコードをDBに登録しました。");
+    console.table(record);
+    console.groupEnd();
+    hideModal();
+    displaySticky("saved", "作成したパズルを保存しました！");
+  } else {
+    hideModal();
+    displaySticky("other", "エラー: 通信環境を確認し、再度保存してください");
   }
 };
 
@@ -285,6 +293,15 @@ const chgPaintMode = (mode) => {
   paint_mode.value = mode;
 };
 
+const showModal = () => {
+  modal.value.style.display = "block";
+  modal.value.classList.add("modal_animation");
+};
+
+const hideModal = () => {
+  modal.value.classList.remove("modal_animation");
+  modal.value.style.display = "none";
+};
 watch(title, () => {
   title_textarea.value.classList.remove("error_bg");
 });
@@ -296,6 +313,28 @@ watch(description, () => {
 
 <template>
   <div>
+    <div ref="modal" class="modal_wrapper" @click="hideModal()">
+      <div class="modal_dialog">
+        <div class="modal_text">以下のデータを保存します。</div>
+        <div class="modal_img">
+          <PuzzleImg :illust="dot_field" :cell-num="size" />
+        </div>
+        <div class="modal_others">
+          <div class="input_set">
+            <span>タイトル: </span>
+            <span>{{ title }}</span>
+          </div>
+          <div class="input_set">
+            <span>詳細: </span>
+            <span>{{ description }}</span>
+          </div>
+        </div>
+        <div class="modal_btn_area">
+          <button @click="hideModal()">いいえ</button>
+          <button @click="saveIllust()">はい</button>
+        </div>
+      </div>
+    </div>
     <div ref="sticky" class="sticky">
       <div
         v-for="(msg, index) in msg_list"
@@ -369,12 +408,61 @@ watch(description, () => {
     <div class="btn_area">
       <button @click="initIllust()">クリア</button>
       <button @click="hideBorder()">枠線</button>
-      <button @click="saveIllust()">保存</button>
+      <button @click="validate()">保存</button>
     </div>
   </div>
 </template>
 
 <style scoped>
+.modal_wrapper {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  display: none;
+}
+.modal_animation {
+  animation: modal_fade_in forwards 0.5s linear;
+}
+@keyframes modal_fade_in {
+  from {
+    display: none;
+    background-color: rgba(0, 0, 0, 0);
+  }
+  to {
+    display: block;
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+.modal_dialog {
+  position: absolute;
+  width: 60%;
+  height: 50%;
+  left: 20%;
+  top: 25%;
+  background: white;
+  border-radius: 30px;
+  display: flex;
+  flex-flow: column;
+  justify-content: space-between;
+  padding: 20px 0;
+}
+.modal_img {
+  width: 90%;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+.modal_others {
+  margin: 10px;
+  display: flex;
+  flex-flow: column;
+  justify-content: space-evenly;
+}
+.modal_btn_area {
+  display: flex;
+  justify-content: space-evenly;
+}
 .sticky {
   position: absolute;
   width: 100%;
