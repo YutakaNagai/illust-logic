@@ -12,6 +12,9 @@ const title = ref("");
 const description = ref("");
 
 const msg_list = ref([]);
+
+const paint_mode = ref("auto");
+
 const title_textarea = ref(null);
 const description_textarea = ref(null);
 const sticky = ref(null);
@@ -31,10 +34,14 @@ onMounted(() => {
   let move_action = "paint";
   illust_field.value.ontouchstart = (event) => {
     console.log("touch start");
-    // タッチ開始時点のセルが黒なら黒→白、白なら白→黒
-    move_action = event.touches[0].target.classList.contains("painted")
-      ? "erase"
-      : "paint";
+    if (paint_mode.value === "auto") {
+      // タッチ開始時点のセルが黒なら黒→白、白なら白→黒
+      move_action = event.touches[0].target.classList.contains("painted")
+        ? "erase"
+        : "paint";
+    } else {
+      move_action = paint_mode.value;
+    }
     const coordinate = event.touches[0].target.id.split("_");
     if (move_action === "erase") {
       event.touches[0].target.classList.remove("painted");
@@ -274,6 +281,10 @@ const displaySticky = (type, msg) => {
   }, 2500);
 };
 
+const chgPaintMode = (mode) => {
+  paint_mode.value = mode;
+};
+
 watch(title, () => {
   title_textarea.value.classList.remove("error_bg");
 });
@@ -332,6 +343,27 @@ watch(description, () => {
         <span>詳細: </span>
         <input ref="description_textarea" type="text" v-model="description" />
       </div>
+    </div>
+
+    <div class="btn_area">
+      <button
+        @click="chgPaintMode('auto')"
+        :class="paint_mode === 'auto' ? '--active' : ''"
+      >
+        自動
+      </button>
+      <button
+        @click="chgPaintMode('paint')"
+        :class="paint_mode === 'paint' ? '--active' : ''"
+      >
+        鉛筆
+      </button>
+      <button
+        @click="chgPaintMode('erase')"
+        :class="paint_mode === 'erase' ? '--active' : ''"
+      >
+        消しゴム
+      </button>
     </div>
 
     <div class="btn_area">
@@ -418,9 +450,13 @@ watch(description, () => {
   display: flex;
   justify-content: space-between;
 }
+.--active {
+  background-color: darkgray;
+}
 .btn_area {
   display: flex;
   justify-content: space-evenly;
+  margin: 5px auto;
 }
 .error_bg {
   background-color: rgb(252, 212, 224);
