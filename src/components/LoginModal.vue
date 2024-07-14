@@ -24,7 +24,12 @@ onMounted(async () => {
 });
 
 const chgStatus = (status) => {
-  login_modal_status.value = status;
+  if (status === "guest") {
+    localStorage.setItem("uuid", "guest");
+    hideModal();
+  } else {
+    login_modal_status.value = status;
+  }
 };
 
 let error_list = [];
@@ -35,6 +40,11 @@ const signup = async () => {
     error_list.push({
       error: "signup_id",
       msg: "ユーザーIDが入力されていません。",
+    });
+  } else if (id.value.includes("guest")) {
+    error_list.push({
+      error: "signup_id",
+      msg: "このユーザーIDは登録できません。",
     });
   }
   if (!password.value || !password.value.match(/\S/g)) {
@@ -48,10 +58,17 @@ const signup = async () => {
       error: "signup_username",
       msg: "ユーザー名が入力されていません。",
     });
+  } else if (
+    username.value.includes("ゲスト") ||
+    username.value.includes("管理")
+  ) {
+    error_list.push({
+      error: "signup_username",
+      msg: "このユーザー名は登録できません。",
+    });
   }
 
   if (error_list.length > 0) {
-    console.log("えらーあり");
     displayError();
   } else {
     const now = Date.now();
