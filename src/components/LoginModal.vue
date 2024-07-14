@@ -9,29 +9,17 @@ const password = ref("");
 const username = ref("");
 const error_msg = ref("");
 
-// ログイン状態の取得
-let is_login = false;
-const chkLogin = async () => {
-  const uuid = localStorage.getItem("uuid");
-
-  const res = await supabase.from("users").select().eq("uuid", uuid);
-  console.log("res :>> ", res);
-  if (res.status === 200 && !res.error) {
-    console.log("ユーザー認証完了");
-    is_login = true;
-    console.log("is_login :>> ", is_login);
-  }
-};
-
 onMounted(async () => {
-  await chkLogin();
+  // ログイン状態の取得
+  const uuid = localStorage.getItem("uuid");
+  const res = await supabase.from("users").select().eq("uuid", uuid).limit(1);
+  const is_login = res.status === 200 && !res.error && res.data.length === 1;
 
   // 未ログインの場合モーダルを表示
-  console.log("is_login :>> ", is_login);
   if (!is_login) {
     login_modal_wrapper.value.focus();
     login_modal_wrapper.value.style.display = "block";
-    login_modal_wrapper.value.classList.add("modal_animation");
+    login_modal_wrapper.value.classList.add("modal_fade_in");
   }
 });
 
@@ -39,48 +27,47 @@ const chgStatus = (status) => {
   login_modal_status.value = status;
 };
 
-const error_list = [];
+let error_list = [];
 const signup = async () => {
+  error_list = [];
   // 空文字バリデーション
-  // if (!id.value || !id.value.match(/\S/g)) {
-  //   error_list.push({
-  //     error: "signup_id",
-  //     msg: "ユーザーIDが入力されていません。",
-  //   });
-  // }
-  // if (!password.value || !password.value.match(/\S/g)) {
-  //   error_list.push({
-  //     error: "signup_password",
-  //     msg: "パスワードが入力されていません。",
-  //   });
-  // }
-  // if (!username.value || !username.value.match(/\S/g)) {
-  //   error_list.push({
-  //     error: "signup_username",
-  //     msg: "ユーザー名が入力されていません。",
-  //   });
-  // } else {
-  //   // 重複チェック
-  //   const chk_id_res = await supabase.from("user").select().eq("id", id.value);
-  //   console.log("signup chk_id_res :>> ", chk_id_res);
-  //   if (chk_id_res.status === 201 && !chk_id_res.error) {
-  //     error_list.push({
-  //       error: "signup_id",
-  //       msg: "このユーザーIDは登録できません。",
-  //     });
-  //   }
-  //   const chk_name_res = await supabase
-  //     .from("user")
-  //     .select()
-  //     .eq("id", username.value);
-  //   console.log("signup chk_name_res :>> ", chk_id_res);
-  //   if (chk_name_res.status === 201 && !chk_name_res.error) {
-  //     error_list.push({
-  //       error: "signup_username",
-  //       msg: "このユーザー名は登録できません。",
-  //     });
-  //   }
-  // }
+  if (!id.value || !id.value.match(/\S/g)) {
+    error_list.push({
+      error: "signup_id",
+      msg: "ユーザーIDが入力されていません。",
+    });
+  }
+  if (!password.value || !password.value.match(/\S/g)) {
+    error_list.push({
+      error: "signup_password",
+      msg: "パスワードが入力されていません。",
+    });
+  }
+  if (!username.value || !username.value.match(/\S/g)) {
+    error_list.push({
+      error: "signup_username",
+      msg: "ユーザー名が入力されていません。",
+    });
+  } else {
+    // 重複チェック
+    const chk_id_res = await supabase.from("user").select().eq("id", id.value);
+    if (chk_id_res.status === 201 && !chk_id_res.error) {
+      error_list.push({
+        error: "signup_id",
+        msg: "このユーザーIDは登録できません。",
+      });
+    }
+    const chk_name_res = await supabase
+      .from("user")
+      .select()
+      .eq("id", username.value);
+    if (chk_name_res.status === 201 && !chk_name_res.error) {
+      error_list.push({
+        error: "signup_username",
+        msg: "このユーザー名は登録できません。",
+      });
+    }
+  }
 
   if (error_list.length > 0) {
     displayError();
@@ -105,6 +92,35 @@ const signup = async () => {
   }
 };
 
+const login = async () => {
+  error_list = [];
+
+  const res = await supabase
+    .from("users")
+    .select("uuid")
+    .eq("id", id.value)
+    .eq("password", password.value)
+    .limit(1);
+  const is_login = res.status === 200 && !res.error && res.data.length === 1;
+
+  if (is_login) {
+    localStorage.setItem("uuid", res.data[0].uuid);
+    hideModal();
+  } else {
+    error_list.push({
+      error: "sign_in",
+      msg: "IDもしくはパスワードが誤っています。",
+    });
+    displayError();
+  }
+};
+
+const hideModal = () => {
+  login_modal_wrapper.value.style.display = "none";
+  login_modal_wrapper.value.classList.add("modal_fade_out");
+  login_modal_wrapper.value.classList.remove("modal_fade_in");
+};
+
 const displayError = () => {
   const error_elements = Array.from(
     document.getElementsByClassName("modal_input_area_error")
@@ -126,9 +142,18 @@ const displayError = () => {
       <template v-if="login_modal_status === 'login'">
         <div class="modal_title">ログインしてください</div>
         <div class="modal_input_area">
-          <div><span>ユーザーID: </span><input type="text" /></div>
-          <div><span>パスワード: </span><input type="text" /></div>
-          <div><button>ログイン</button></div>
+          <div class="modal_input_area_item">
+            <span>ユーザーID: </span><input type="text" v-model="id" />
+            <div id="sign_in" class="modal_input_area_error">
+              {{ error_msg }}
+            </div>
+          </div>
+          <div class="modal_input_area_item">
+            <span>パスワード: </span><input type="text" v-model="password" />
+          </div>
+          <div class="modal_input_area_item">
+            <button @click="login()">ログイン</button>
+          </div>
           <!-- <div>
             <button @click="chgStatus('forgot')">パスワードを忘れた場合</button>
           </div> -->
@@ -197,7 +222,7 @@ const displayError = () => {
   top: 0;
   display: none;
 }
-.modal_animation {
+.modal_fade_in {
   animation: modal_fade_in forwards 0.5s linear;
 }
 @keyframes modal_fade_in {
@@ -208,6 +233,21 @@ const displayError = () => {
   to {
     display: block;
     background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+.modal_fade_out {
+  animation: modal_fade_out forwards 0.5s linear;
+}
+@keyframes modal_fade_out {
+  from {
+    display: block;
+    background-color: rgba(0, 0, 0, 0.3);
+    opacity: 1;
+  }
+  to {
+    display: none;
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0;
   }
 }
 .modal_dialog {
