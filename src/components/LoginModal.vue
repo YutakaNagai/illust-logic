@@ -48,28 +48,10 @@ const signup = async () => {
       error: "signup_username",
       msg: "ユーザー名が入力されていません。",
     });
-  } else {
-    // 重複チェック
-    const chk_id_res = await supabase.from("user").select().eq("id", id.value);
-    if (chk_id_res.status === 201 && !chk_id_res.error) {
-      error_list.push({
-        error: "signup_id",
-        msg: "このユーザーIDは登録できません。",
-      });
-    }
-    const chk_name_res = await supabase
-      .from("user")
-      .select()
-      .eq("id", username.value);
-    if (chk_name_res.status === 201 && !chk_name_res.error) {
-      error_list.push({
-        error: "signup_username",
-        msg: "このユーザー名は登録できません。",
-      });
-    }
   }
 
   if (error_list.length > 0) {
+    console.log("えらーあり");
     displayError();
   } else {
     const now = Date.now();
@@ -87,13 +69,38 @@ const signup = async () => {
       console.groupEnd();
 
       localStorage.setItem("uuid", uuid);
-      location.reload();
+
+      hideModal();
+    } else {
+      const cause_of_error = /^Key \((.*)\)=\(.*\) already exists.$/.exec(
+        res.error.details
+      )[1];
+
+      if (cause_of_error === "id") {
+        error_list.push({
+          error: "signup_id",
+          msg: "このユーザーIDは登録できません。",
+        });
+      } else if (cause_of_error === "name") {
+        error_list.push({
+          error: "signup_username",
+          msg: "このユーザー名は登録できません。",
+        });
+      } else {
+        error_list.push({
+          error: "signup_id",
+          msg: "原因不明のエラーが発生しました。",
+        });
+      }
+      displayError();
     }
   }
 };
 
 const login = async () => {
   error_list = [];
+  console.log("id.value :>> ", id.value);
+  console.log("password.value :>> ", password.value);
 
   const res = await supabase
     .from("users")
@@ -130,7 +137,6 @@ const displayError = () => {
   });
   error_list.forEach((errorInfo) => {
     const error_target = document.getElementById(errorInfo.error);
-    console.log("error_target :>> ", error_target);
     error_target.style.display = "block";
     error_target.textContent = errorInfo.msg;
   });
@@ -142,18 +148,22 @@ const displayError = () => {
       <template v-if="login_modal_status === 'login'">
         <div class="modal_title">ログインしてください</div>
         <div class="modal_input_area">
-          <div class="modal_input_area_item">
-            <span>ユーザーID: </span><input type="text" v-model="id" />
-            <div id="sign_in" class="modal_input_area_error">
-              {{ error_msg }}
+          <form>
+            <div class="modal_input_area_item">
+              <span>ユーザーID: </span
+              ><input type="text" v-model="id" autocomplete="on" />
+              <div id="sign_in" class="modal_input_area_error">
+                {{ error_msg }}
+              </div>
             </div>
-          </div>
-          <div class="modal_input_area_item">
-            <span>パスワード: </span><input type="text" v-model="password" />
-          </div>
-          <div class="modal_input_area_item">
-            <button @click="login()">ログイン</button>
-          </div>
+            <div class="modal_input_area_item">
+              <span>パスワード: </span
+              ><input type="password" v-model="password" autocomplete="on" />
+            </div>
+            <div class="modal_input_area_item">
+              <button type="button" @click="login()">ログイン</button>
+            </div>
+          </form>
           <!-- <div>
             <button @click="chgStatus('forgot')">パスワードを忘れた場合</button>
           </div> -->
@@ -167,43 +177,47 @@ const displayError = () => {
       <template v-if="login_modal_status === 'signup'">
         <div class="modal_title">新規登録</div>
         <div class="modal_input_area">
-          <div class="modal_input_area_item">
-            <div>
-              <span>ユーザーID: </span><input type="text" v-model="id" />
+          <form>
+            <div class="modal_input_area_item">
+              <div>
+                <span>ユーザーID: </span><input type="text" v-model="id" />
+              </div>
+              <div class="modal_input_area_subtext">
+                <span
+                  >※
+                  ログインにのみ利用され、他のユーザーへは公開されません。</span
+                >
+              </div>
+              <div id="signup_id" class="modal_input_area_error">
+                {{ error_msg }}
+              </div>
             </div>
-            <div class="modal_input_area_subtext">
-              <span
-                >※
-                ログインにのみ利用され、他のユーザーへは公開されません。</span
-              >
+            <div class="modal_input_area_item">
+              <div>
+                <span>パスワード: </span
+                ><input type="text" v-model="password" />
+              </div>
+              <div class="modal_input_area_subtext">
+                <span>※ 推測されにくいものを設定してください。</span>
+              </div>
+              <div id="signup_password" class="modal_input_area_error">
+                {{ error_msg }}
+              </div>
             </div>
-            <div id="signup_id" class="modal_input_area_error">
-              {{ error_msg }}
+            <div class="modal_input_area_item">
+              <div>
+                <span>ユーザー名: </span
+                ><input type="text" v-model="username" />
+              </div>
+              <div class="modal_input_area_subtext">
+                <span>※ パズル作成時など、他ユーザに公開されます。</span>
+              </div>
+              <div id="signup_username" class="modal_input_area_error">
+                {{ error_msg }}
+              </div>
             </div>
-          </div>
-          <div class="modal_input_area_item">
-            <div>
-              <span>パスワード: </span><input type="text" v-model="password" />
-            </div>
-            <div class="modal_input_area_subtext">
-              <span>※ 推測されにくいものを設定してください。</span>
-            </div>
-            <div id="signup_password" class="modal_input_area_error">
-              {{ error_msg }}
-            </div>
-          </div>
-          <div class="modal_input_area_item">
-            <div>
-              <span>ユーザー名: </span><input type="text" v-model="username" />
-            </div>
-            <div class="modal_input_area_subtext">
-              <span>※ パズル作成時など、他ユーザに公開されます。</span>
-            </div>
-            <div id="signup_username" class="modal_input_area_error">
-              {{ error_msg }}
-            </div>
-          </div>
-          <div><button @click="signup()">新規登録</button></div>
+            <div><button type="button" @click="signup()">新規登録</button></div>
+          </form>
         </div>
         <div>
           <button @click="chgStatus('login')">ログイン</button>
