@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
 import { supabase } from "../supabase";
+import { watchStorage } from "../util.js";
 
 const login_modal_wrapper = ref(null);
 const login_modal_status = ref("login");
@@ -8,7 +9,6 @@ const id = ref("");
 const password = ref("");
 const username = ref("");
 const error_msg = ref("");
-
 onMounted(async () => {
   // ログイン状態の取得
   const uuid = localStorage.getItem("uuid");
@@ -17,15 +17,26 @@ onMounted(async () => {
 
   // 未ログインの場合モーダルを表示
   if (!is_login) {
-    login_modal_wrapper.value.focus();
-    login_modal_wrapper.value.style.display = "block";
-    login_modal_wrapper.value.classList.add("modal_fade_in");
+    showModal();
   }
+
+  // Header.vueのボタン押下を監視
+  window.addEventListener("click", (event) => {
+    console.log("event.target.id :>> ", event.target.id);
+    if (
+      event.target.id === "header_login_btn" ||
+      event.target.id === "header_logout_btn"
+    ) {
+      localStorage.removeItem("uuid");
+      showModal();
+    }
+  });
 });
 
 const chgStatus = (status) => {
   if (status === "guest") {
     localStorage.setItem("uuid", "guest");
+    watchStorage("watch-ls-uuid", "ls", "uuid");
     hideModal();
   } else {
     login_modal_status.value = status;
@@ -87,7 +98,7 @@ const signup = async () => {
       console.groupEnd();
 
       localStorage.setItem("uuid", uuid);
-
+      watchStorage("watch-ls-uuid", "ls", "uuid");
       hideModal();
     } else {
       const cause_of_error = /^Key \((.*)\)=\(.*\) already exists.$/.exec(
@@ -138,6 +149,7 @@ const login = async () => {
           .update({ fail_login: 0 })
           .eq("id", id.value);
         localStorage.setItem("uuid", user_info.uuid);
+        watchStorage("watch-ls-uuid", "ls", "uuid");
         hideModal();
       } else {
         // パスワードが異なる場合、ログイン連続失敗回数を加算
@@ -166,6 +178,15 @@ const login = async () => {
       msg: "登録されていないユーザーIDです。",
     });
     displayError();
+  }
+};
+
+const showModal = () => {
+  login_modal_wrapper.value.focus();
+  login_modal_wrapper.value.style.display = "block";
+  login_modal_wrapper.value.classList.add("modal_fade_in");
+  if (login_modal_wrapper.value.classList.contains("modal_fade_out")) {
+    login_modal_wrapper.value.classList.remove("modal_fade_out");
   }
 };
 
