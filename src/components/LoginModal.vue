@@ -61,6 +61,7 @@ const signup = async () => {
       password: password.value,
       name: username.value,
       uuid,
+      fail_login: 0,
     };
     const res = await supabase.from("users").insert([record]);
     if (res.status === 201 && !res.error) {
@@ -99,24 +100,53 @@ const signup = async () => {
 
 const login = async () => {
   error_list = [];
-  console.log("id.value :>> ", id.value);
-  console.log("password.value :>> ", password.value);
 
-  const res = await supabase
+  const user_res = await supabase
     .from("users")
-    .select("uuid")
+    .select()
     .eq("id", id.value)
-    .eq("password", password.value)
     .limit(1);
-  const is_login = res.status === 200 && !res.error && res.data.length === 1;
 
-  if (is_login) {
-    localStorage.setItem("uuid", res.data[0].uuid);
-    hideModal();
+  if (
+    user_res.status === 200 &&
+    !user_res.error &&
+    user_res.data.length === 1
+  ) {
+    const user_info = user_res.data[0];
+    if (user_info.fail_login < 3) {
+      if (user_info.password === password.value) {
+        // ログインに成功した場合、ログイン連続失敗回数をリセット
+        await supabase
+          .from("users")
+          .update({ fail_login: 0 })
+          .eq("id", id.value);
+        localStorage.setItem("uuid", user_info.uuid);
+        hideModal();
+      } else {
+        // パスワードが異なる場合、ログイン連続失敗回数を加算
+        await supabase
+          .from("users")
+          .update({ fail_login: user_info.fail_login + 1 })
+          .eq("id", id.value);
+        error_list.push({
+          error: "sign_in",
+          msg: "パスワードが誤っています。",
+        });
+        displayError();
+      }
+    } else {
+      // ログイン失敗回数が３回以上の場合
+      error_list.push({
+        error: "sign_in",
+        msg: "アカウントはロックされています。",
+      });
+      displayError();
+    }
   } else {
+    // IDが異なる場合
     error_list.push({
       error: "sign_in",
-      msg: "IDもしくはパスワードが誤っています。",
+      msg: "登録されていないユーザーIDです。",
     });
     displayError();
   }
