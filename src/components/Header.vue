@@ -36,8 +36,20 @@ onMounted(() => {
 <style scoped>
 .title {
   margin-block: 0;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-size: xx-large;
+
+  background: repeating-linear-gradient(
+    -60deg,
+    #ffbd71 0,
+    #ffbd71 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  background-position: 0 100%;
+  background-size: 100% 50%;
+  background-repeat: no-repeat;
 }
 .header {
   position: relative;
