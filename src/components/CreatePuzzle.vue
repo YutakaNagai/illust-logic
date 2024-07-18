@@ -312,108 +312,118 @@ watch(description, () => {
 </script>
 
 <template>
-  <div>
-    <div ref="modal" class="modal_wrapper" @click="hideModal()">
-      <div class="modal_dialog">
-        <div class="modal_text">以下のデータを保存します。</div>
-        <div class="modal_img">
-          <PuzzleImg :illust="dot_field" :cell-num="size" />
-        </div>
-        <div class="modal_others">
-          <div class="input_set">
-            <span>タイトル: </span>
-            <span>{{ title }}</span>
+  <div class="create_puzzle">
+    <div>
+      <div ref="modal" class="modal_wrapper" @click="hideModal()">
+        <div class="modal_dialog">
+          <div class="modal_text">以下のデータを保存します。</div>
+          <div class="modal_img">
+            <PuzzleImg :illust="dot_field" :cell-num="size" />
           </div>
-          <div class="input_set">
-            <span>詳細: </span>
-            <span>{{ description }}</span>
+          <div class="modal_others">
+            <div class="input_set">
+              <span>タイトル: </span>
+              <span>{{ title }}</span>
+            </div>
+            <div class="input_set">
+              <span>詳細: </span>
+              <span>{{ description }}</span>
+            </div>
           </div>
-        </div>
-        <div class="modal_btn_area">
-          <button @click="hideModal()">いいえ</button>
-          <button @click="saveIllust()">はい</button>
+          <div class="modal_btn_area">
+            <button @click="hideModal()">いいえ</button>
+            <button @click="saveIllust()">はい</button>
+          </div>
         </div>
       </div>
-    </div>
-    <div ref="sticky" class="sticky">
-      <div
-        v-for="(msg, index) in msg_list"
-        :key="`error_${index}`"
-        class="sticky_msg"
-      >
-        {{ msg }}
-      </div>
-    </div>
-    <div class="size_btn_area">
-      <button @click="chgFieldSize(10)">10x10</button>
-      <button @click="chgFieldSize(20)">20x20</button>
-      <button @click="chgFieldSize(30)">30x30</button>
-    </div>
-    <div ref="illust_field" class="illust_field">
-      <div
-        v-for="(col, c_index) in dot_field"
-        :key="`col_${c_index}`"
-        class="col"
-      >
+      <div ref="sticky" class="sticky">
         <div
-          v-for="(row, r_index) in col"
-          :key="`row_${r_index}`"
-          :id="`${c_index}_${r_index}`"
-          class="cell --border"
-          :class="{
-            '--large': size === 10,
-            '--medium': size === 20,
-            '--small': size === 30,
-            '--thick_left': c_index % 5 === 0,
-            '--thick_right': c_index === size - 1,
-            '--thick_top': r_index % 5 === 0,
-            '--thick_bottom': r_index === size - 1,
-          }"
-        ></div>
+          v-for="(msg, index) in msg_list"
+          :key="`error_${index}`"
+          class="sticky_msg"
+        >
+          {{ msg }}
+        </div>
       </div>
-    </div>
-
-    <div class="input_area">
-      <div class="input_set">
-        <span>タイトル: </span>
-        <input ref="title_textarea" type="text" v-model="title" />
+      <div class="size_btn_area">
+        <button @click="chgFieldSize(10)">10x10</button>
+        <button @click="chgFieldSize(20)">20x20</button>
+        <button @click="chgFieldSize(30)">30x30</button>
       </div>
-      <div class="input_set">
-        <span>詳細: </span>
-        <input ref="description_textarea" type="text" v-model="description" />
+      <div ref="illust_field" class="illust_field">
+        <div
+          v-for="(col, c_index) in dot_field"
+          :key="`col_${c_index}`"
+          class="col"
+        >
+          <div
+            v-for="(row, r_index) in col"
+            :key="`row_${r_index}`"
+            :id="`${c_index}_${r_index}`"
+            class="cell --border"
+            :class="{
+              '--large': size === 10,
+              '--medium': size === 20,
+              '--small': size === 30,
+              '--thick_left': c_index % 5 === 0,
+              '--thick_right': c_index === size - 1,
+              '--thick_top': r_index % 5 === 0,
+              '--thick_bottom': r_index === size - 1,
+            }"
+          ></div>
+        </div>
       </div>
-    </div>
 
-    <div class="btn_area">
-      <button
-        @click="chgPaintMode('auto')"
-        :class="paint_mode === 'auto' ? '--active' : ''"
-      >
-        自動
-      </button>
-      <button
-        @click="chgPaintMode('paint')"
-        :class="paint_mode === 'paint' ? '--active' : ''"
-      >
-        鉛筆
-      </button>
-      <button
-        @click="chgPaintMode('erase')"
-        :class="paint_mode === 'erase' ? '--active' : ''"
-      >
-        消しゴム
-      </button>
-    </div>
+      <div class="input_area">
+        <div class="input_set">
+          <span>タイトル: </span>
+          <input ref="title_textarea" type="text" v-model="title" />
+        </div>
+        <div class="input_set">
+          <span>詳細: </span>
+          <input ref="description_textarea" type="text" v-model="description" />
+        </div>
+      </div>
 
-    <div class="btn_area">
-      <button @click="initIllust()">クリア</button>
-      <button @click="hideBorder()">枠線</button>
-      <button @click="validate()">保存</button>
+      <div class="btn_area">
+        <button
+          @click="chgPaintMode('auto')"
+          :class="paint_mode === 'auto' ? '--active' : ''"
+        >
+          自動
+        </button>
+        <button
+          @click="chgPaintMode('paint')"
+          :class="paint_mode === 'paint' ? '--active' : ''"
+        >
+          鉛筆
+        </button>
+        <button
+          @click="chgPaintMode('erase')"
+          :class="paint_mode === 'erase' ? '--active' : ''"
+        >
+          消しゴム
+        </button>
+      </div>
+
+      <div class="btn_area">
+        <button @click="initIllust()">クリア</button>
+        <button @click="hideBorder()">枠線</button>
+        <button @click="validate()">保存</button>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.create_puzzle {
+  position: relative;
+  width: 100vw;
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+}
 .modal_wrapper {
   position: absolute;
   width: 100vw;

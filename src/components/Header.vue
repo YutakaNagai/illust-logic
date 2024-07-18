@@ -11,29 +11,38 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="header">
-    <div><h2 class="title">イラストロジック</h2></div>
-    <div class="header_btn_wrapper">
-      <div>
-        <img
-          v-if="btn_str === 'ログイン'"
-          id="header_login_btn"
-          class="header_login_btn_img"
-          src="../assets/login.png"
-        />
-        <img
-          v-else
-          id="header_logout_btn"
-          class="header_login_btn_img"
-          src="../assets/logout.png"
-        />
-        <div class="header_login_btn_text">{{ btn_str }}</div>
+  <div class="header_wrapper">
+    <div class="header">
+      <div><h2 class="title">イラストロジック</h2></div>
+      <div class="header_btn_wrapper">
+        <div>
+          <img
+            v-if="btn_str === 'ログイン'"
+            id="header_login_btn"
+            class="header_login_btn_img"
+            src="../assets/login.png"
+          />
+          <img
+            v-else
+            id="header_logout_btn"
+            class="header_login_btn_img"
+            src="../assets/logout.png"
+          />
+          <div class="header_login_btn_text">{{ btn_str }}</div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.header_wrapper {
+  width: 100%;
+  height: 80px;
+  background-color: rgba(196, 196, 196, 0.7);
+  box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5),
+    inset 0px -3px 6px -2px rgba(0, 0, 0, 0.3);
+}
 .title {
   margin-block: 0;
   margin-top: 10px;
